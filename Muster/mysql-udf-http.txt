@@ -1,0 +1,39 @@
+Um was geht es:
+Eine Änderung in einer Datenbank soll sofort an alle Web-Browser, die eine gewisse Adresse aufgerufen haben,
+übermittelt und dort auch angezeigt werden.
+
+Etwas spezifischer:
+Ein Trigger einer mySql-Datenbank, der durch einen Datenupdate gefeuert wurde, soll einen Broadcast dieser veränderten Daten
+an alle Clients auslösen die über Websockets mit einem Webserver verbunden sind.
+
+Noch konkreter:
+Ein Trigger in mySql startet über die mySql-Funktion http_put, enthalten im Paket mysql-udf-http,
+ein Broadcasting an alle mit websockets verbundenen Clients eines node.js-Servers mittels socket.io.
+
+
+1. Voraussetzungen
+Es sollte ein Linux-Server verfügbar sein. Es geht auch mit Windows aber damit habe ich keine Erfahrung.
+Dies soll übrigens kein Windows-Bashing sein: ich bin ein Liebhaber von Desktop-Windows und von Server-Linux.
+Auf dem Server sollte schon mySql und node.js installiert sein.
+
+2. mySql Erweiterungen
+
+Benötigt wird die User-defined-Function mysql-udf-http von Google.
+Man findet sie auf
+https://code.google.com/p/mysql-udf-http/
+
+Diese Installation ist etwas nervig weil die Beschreibung auf obiger Website nur in ganz speziellen Umgebungen
+genau so funktioniert. Hilfreich bei Problemen ist auch:
+https://code.google.com/p/mysql-udf-http/issues/detail?id=1
+
+
+
+
+
+3. node.js Komponenten
+
+Man benötigt die node.js Komponenten url, fs udn socket.id. Man kann sie installieren, falls nicht schon geschehen mit
+
+npm install url
+npm install fs
+npm install socket.io

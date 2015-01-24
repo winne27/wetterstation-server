@@ -1,0 +1,35 @@
+<!DOCTYPE HTML>
+
+<html>
+
+<head>
+  <title>Flot Example</title>
+  <script type="text/javascript" src="socket.io/socket.io.js"></script>
+  <script>
+
+   var socket = io.connect();
+   socket.on('diag',function(data)
+   {
+      document.getElementById("diagcon" + data.container).src = data.stream;
+   });
+
+   function getDiag(obj)
+   {
+      socket.emit('getDiag',{name: obj.value});
+      obj.value = (obj.value == 'yesterday') ? 'today' : 'yesterday';
+   }
+  </script>
+</head>
+
+<body>
+  <b>This graphic can be changed by clicking the button below</b>
+  <br><br>
+  <img src="" alt="" id="diagcon1" /> <br>
+  <input type="button" value="yesterday" onclick="getDiag(this)" style="cursor:pointer; width: 120px;margin-left: 145px; padding: 3px 20px;border-radius: 6px;font-size: 1.2em" />
+  <br><br>
+  <b>This graphic changes every 5 seconds by websocket broadcasting from server</b>
+  <br><br>
+  <img src="" alt="" id="diagcon2" /> <br>
+</body>
+
+</html>
