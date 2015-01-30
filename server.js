@@ -51,14 +51,22 @@ var ios = io(server);
 // handle for the websocket connection from browser
 ios.sockets.on('connection', function(socket)
 {
-   //console.log(socket);
-   //console.log(socket.handshake.query.client);
-   //funcs.mylog("connection from " + socket.handshake.headers['x-real-ip']);
-   funcs.logConnectionIP(http,socket.handshake.headers['x-real-ip'],socket.handshake.query.client);
-   if (socket.handshake.query.client && socket.handshake.query.client == 'widget')
+   //console.log(socket.handshake.query);
+   funcs.logConnectionIP(http,socket.handshake.headers['x-real-ip'],socket.handshake.query);
+   if (socket.handshake.query.client && socket.handshake.query.client == 'Widget')
    {
       socket.join('widget');
-      fetch.sendActData(ios);
+
+      socket.on('sendActData',function(data)
+      {
+         fetch.sendActData(ios);
+      });
+/*
+      socket.on('disconnect',function(data)
+      {
+         funcs.mylog('disconnected widget');
+      });
+*/
    }
    else
    {
@@ -89,6 +97,12 @@ ios.sockets.on('connection', function(socket)
       {
          warnService.handleRequest(ios,data);
       });
+/*
+      socket.on('disconnect',function(data)
+      {
+         funcs.mylog('disconnected');
+      });
+*/
    }
 });
 

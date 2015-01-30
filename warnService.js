@@ -5,7 +5,7 @@ var params     = require('./params');
 var mailer     = nodemailer.createTransport();
 var mysql      = require('mysql');
 var dbacc      = require('/etc/auth/wetterstation.js');
-var db         = mysql.createConnection(dbacc.dbAccount);
+//var db         = mysql.createConnection(dbacc.dbAccount);
 
 exports.handleRequest = function(ios,data)
 {
@@ -18,6 +18,7 @@ exports.handleRequest = function(ios,data)
       hash:  hash
    }
 
+   var db = mysql.createConnection(dbacc.dbAccount);
    var query = db.query('INSERT INTO warnung SET ?', insData, function(err, result)
    {
       if (err)
@@ -40,6 +41,7 @@ exports.handleRequest = function(ios,data)
          });
          ios.sockets.emit('successWarningEntry',{msg: 'erfolgreich eingetragen',type: data.type, err: false});
       }
+      db.end();
    });
 }
 exports.confirmRequest = function(response,getvars)
@@ -74,6 +76,7 @@ exports.confirmRequest = function(response,getvars)
       return;
    }
 
+   var db = mysql.createConnection(dbacc.dbAccount);
    db.query(sql, values , function(err, result)
    {
       //console.log(result);
@@ -99,11 +102,13 @@ exports.confirmRequest = function(response,getvars)
       response.writeHead(200, {"Content-Type": "text/html"});
       response.write(html, "utf8");
       response.end();
+      db.end();
    });
 }
 
 exports.checkDewpoint = function()
 {
+   var db = mysql.createConnection(dbacc.dbAccount);
    db.query('SELECT dewpoint, temp_out from weather order by datetime desc limit 1', function(err, rows)
    {
       if (err)
@@ -133,6 +138,7 @@ exports.checkDewpoint = function()
                {
                   funcs.mylog('Fehler beim Select emails:');
                   console.log(err);
+                  db.end();
                }
                else
                {
@@ -145,17 +151,19 @@ exports.checkDewpoint = function()
                   {
                      var text2 = text + "\n\n" +
                                  "---------------------------------------------------------------\n\n" +
-                                 'Falls Sie erst im Herbst des nächsten Jahres wieder gewarnt werden wollen, bitte auf folgenden Link klicken:' + "\n" +
+                                 'Falls Sie erst im kommenden Herbst wieder gewarnt werden wollen, bitte auf folgenden Link klicken:' + "\n" +
                                  'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=nextyear' + "\n\n" +
                                  'Falls Sie überhaupt nicht mehr gewarnt werden wollen, bitte auf folgenden Link klicken:' + "\n" +
                                  'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=disable' + "\n\n";
                      var html2 = html + "<br><br><hr><br>" +
-                                 'Falls Sie erst im Herbst des nächsten Jahres wieder gewarnt werden wollen, bitte auf folgenden Link klicken:<br>' +
+                                 'Falls Sie erst im kommenden Herbst wieder gewarnt werden wollen, bitte auf folgenden Link klicken:<br>' +
                                  '<a target="blank" href="https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=nextyear">' +
                                  'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=nextyear</a><br><br>' +
                                  'Falls Sie überhaupt nicht mehr gewarnt werden wollen, bitte auf folgenden Link klicken:<br>' +
                                  '<a target="blank" href="https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=disable">' +
-                                 'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=disable</a><br><br>';
+
+                                'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=disable</a><br><br>';
+                     /* */
                      mailer.sendMail(
                      {
                         from: 'wetterstation@fehngarten.de',
@@ -164,8 +172,10 @@ exports.checkDewpoint = function()
                         text: text2,
                         html: html2
                      });
+                     /* */
                   }
                }
+               db.end();
             });
          }
       }

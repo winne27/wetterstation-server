@@ -45,7 +45,7 @@ var mylog = function(msg)
    console.log(getHeute.myHumanReadable() + msg);
 }
 
-exports.logConnectionIP = function(http,ip,type)
+exports.logConnectionIP = function(http,ip,query)
 {
    //var url = 'http://freegeoip.net/json/' + ip;
    var url = 'http://www.telize.com/geoip/' + ip;
@@ -61,7 +61,14 @@ exports.logConnectionIP = function(http,ip,type)
          try
          {
             var values = JSON.parse(data);
-            mylog("New " + type + " connection from " + ip + " " + values.country + " - " + values.region + " - " + values.city + " - " + values.isp);
+            if (query.client == 'Browser')
+            {
+               mylog(query.client + " connected from " + ip + " " + values.country + " - " + values.region + " - " + values.city + " - " + values.isp);
+            }
+            else
+            {
+               mylog(query.client + " on " + query.model + " with " + query.platform + " " + query.version + " connected from " + ip + " " + values.country + " - " + values.region + " - " + values.city + " - " + values.isp);
+            }
          }
          catch(e)
          {
@@ -72,7 +79,7 @@ exports.logConnectionIP = function(http,ip,type)
    })
    .on('error', function(e)
    {
-      funcs.mylog("Got error from freegeoip.net: " + e.message);
+      mylog("Got error from freegeoip.net: " + e.message);
    });
 }
 
