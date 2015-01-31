@@ -30,6 +30,9 @@ try
    $output['special']['Forcast']    = 'img/' . $row['forecast'] . '.jpg';
    $output['values']['Rain1h']      = $row['rain_1h'];
    $output['values']['Rain24h']     = $row['rain_24h'];
+   $Sunrise     = date_sunrise(time());
+   $Sunset      = date_sunset(time());
+   //$output['values']['Sunriseset']  = $Sunrise . ' - ' . $Sunset;
 
    $sql = "SELECT power from em1010_readings where dnr = 3 order by datetime desc limit 0,1";
    $stmt = $db->query($sql);
