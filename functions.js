@@ -44,7 +44,7 @@ var mylog = function(msg)
 {
    console.log(getHeute.myHumanReadable() + msg);
 }
-
+ 
 exports.logConnectionIP = function(http,ip,query)
 {
    //var url = 'http://freegeoip.net/json/' + ip;
