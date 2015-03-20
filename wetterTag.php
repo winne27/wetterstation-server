@@ -120,13 +120,25 @@
          $output['values']['Moonrise'] = date('H:i', $moon->moonrise);
          $output['values']['Moonset'] = date('H:i', $moon->moonset);
 
-         $moon = new Solaris\MoonPhase($today);
-         $nextNewMoon = ($moon->new_moon() > $today) ?  $moon->new_moon() : $moon->next_new_moon();
-         $nextFullMoon = ($moon->full_moon() > $today) ?  $moon->full_moon() : $moon->next_full_moon();
+         $jetzt = time();
+         $moon = new Solaris\MoonPhase($jetzt);
+         //$moon = new Solaris\MoonPhase(date());
+         $nextNewMoon = ($moon->new_moon() > $jetzt) ?  $moon->new_moon() : $moon->next_new_moon();
+         $nextFullMoon = ($moon->full_moon() > $jetzt) ?  $moon->full_moon() : $moon->next_full_moon();
          $output['values']['Nextnewmoon'] = date( 'j. M. H:i:s', $nextNewMoon );
          $output['values']['Nextfullmoon'] = date( 'j. M. H:i:s', $nextFullMoon );
          $moonPhase = $moon->phase();
 
+
+         if ($jetzt > $nextNewMoon || ($jetzt <= $nextFullMoon && $nextFullMoon < $nextNewMoon))
+         {
+            $tendenz = ' &uarr;';
+         }
+         else
+         {
+            $tendenz = ' &darr;';
+         }
+         /*
          if ($moonPhase == 0 || $moonPhase == 0.5 || $moonPhase == 1)
          {
             $tendenz = ' &uarr;';
@@ -139,6 +151,7 @@
          {
             $tendenz = ' &darr;';
          }
+         */
          $output['values']['Moonphase'] = round($moon->illumination() * 100,0) . '%' . $tendenz;
 
 
