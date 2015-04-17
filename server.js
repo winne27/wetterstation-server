@@ -6,10 +6,15 @@ var fetch    = require('./fetchDB');
 var graphics = require('./graphics');
 var params   = require('./params');
 var funcs    = require('./functions');
+var radar    = require('./radar');
+var forecast = require('./forecast');
 var warnService = require('./warnService');
 var qs = require('querystring');
 var events = require('./eventEmitter');
 var localEmitter = events.localEmitter;
+var initCompleteCount = 0;
+var initCompleteMax = 4;
+var mylog = funcs.mylog;
 
 var server = http.createServer(function(request, response)
 {
@@ -21,7 +26,7 @@ var server = http.createServer(function(request, response)
          //funcs.mylog("trigger received");
          response.writeHead(200, {'Content-Type': 'text/plain'});
          response.end();
-         setTimeout(function(){fetch.fetchAllTrigger(ios)},5000);
+         setTimeout(function(){fetch.fetchAllTrigger(ios)},3000);
          break;
       case '/vars':
          var varshow = url.parse(request.url).search.substr(1);
@@ -72,7 +77,15 @@ ios.sockets.on('connection', function(socket)
    {
       socket.join('all');
       fetch.sendOldData(ios);
-      graphics.sendAllGraphics(ios);
+
+      forecast.sendHourly(ios, true);
+      forecast.sendTenDay(ios, true);
+
+      setTimeout(function()
+      {
+         graphics.sendAllGraphics(ios);
+         radar.sendRadar(ios);
+      },1000);
 
       socket.on('refresh', function(data)
       {
@@ -110,13 +123,30 @@ ios.sockets.on('connection', function(socket)
 // to avoid incomplete data delivering
 localEmitter.on('initComplete',function()
 {
-   server.listen(params.port);
+   initCompleteCount++;
+   if (initCompleteCount === initCompleteMax)
+   {
+      server.listen(params.port);
+      mylog('listen startet');
+   }
 })
 
 funcs.mylog('Server gestartet');
 
 // Read data from DB into buffer
 fetch.fetchAllInit(ios,true);
+radar.getRadar(false);
+forecast.getTenDay(false);
+forecast.getHourly(false);
 
+setInterval(function()
+{
+   radar.getRadar(true,ios);
+},900000);
 
+setInterval(function()
+{
+   forecast.getTenDay(true,ios);
+   forecast.getHourly(true,ios);
+},3600000);
 

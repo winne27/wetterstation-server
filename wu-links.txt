@@ -1,0 +1,3 @@
+http://api.wunderground.com/api/0d87505114cceb6c/radar/image.png?centerlat=53.1&centerlon=7.56&radius=180&width=313&height=313&newmaps=1
+http://api.wunderground.com/api/0d87505114cceb6c/hourly10day/lang:DL/q/Germany/Ostrhauderfehn.json
+http://api.wunderground.com/api/0d87505114cceb6c/forecast10day/lang:DL/q/Germany/Ostrhauderfehn.json

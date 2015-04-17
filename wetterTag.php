@@ -112,8 +112,9 @@
          $output['values']['RainTotal'] = $rainTotal;
          $output['values']['SunTotal'] = $sunTotal;
          $output['special']['Datum'] = $dateString;
-         $Sunrise = date_sunrise($today, SUNFUNCS_RET_STRING, 53.9, 7.57);
-         $Sunset = date_sunset($today, SUNFUNCS_RET_STRING, 53.9, 7.57);
+         setlocale (LC_ALL, 'de_DE');
+         $Sunrise = date_sunrise($today, SUNFUNCS_RET_STRING, 53.9, 7.57,90,1 + date('I'));
+         $Sunset = date_sunset($today, SUNFUNCS_RET_STRING, 53.9, 7.57,90,1 + date('I'));
          $output['values']['Sunriseset'] = $Sunrise . ' - ' . $Sunset;
 
          $moon = Moon::calculateMoonTimes(substr($dateString, 5, 2), substr($dateString, 8, 2), substr($dateString, 0, 4), 53.9, 7.57);
@@ -125,8 +126,15 @@
          //$moon = new Solaris\MoonPhase(date());
          $nextNewMoon = ($moon->new_moon() > $jetzt) ?  $moon->new_moon() : $moon->next_new_moon();
          $nextFullMoon = ($moon->full_moon() > $jetzt) ?  $moon->full_moon() : $moon->next_full_moon();
-         $output['values']['Nextnewmoon'] = date( 'j. M. H:i:s', $nextNewMoon );
+         $output['values']['Nextnewmoon'] = date( 'j. M H:i:s', $nextNewMoon );
          $output['values']['Nextfullmoon'] = date( 'j. M. H:i:s', $nextFullMoon );
+
+         $enMonths = array('Mar','May.','Oct','Dec');
+         $deMonths = array('Mrz','Mai','Okt','Dez');
+
+         $output['values']['Nextnewmoon'] = str_replace($enMonths,$deMonths,$output['values']['Nextnewmoon']);
+         $output['values']['Nextfullmoon'] = str_replace($enMonths,$deMonths,$output['values']['Nextfullmoon']);
+         
          $moonPhase = $moon->phase();
 
 

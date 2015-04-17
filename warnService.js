@@ -65,11 +65,11 @@ exports.confirmRequest = function(response,getvars)
    {
       var monat = funcs.getHeute['Monats']();
       var jahr = funcs.getHeute['Jahr']();
-      var nextDate = (monat < '09') ? jahr + '-09-01' : (+jahr + 1) + '-09-01';
+      var nextDate = (monat < '05') ? jahr + '-05-01' : (+jahr + 1) + '-05-01';
       var sql = 'UPDATE warnung SET validfrom = \'' + nextDate + '\' where wnr = ? and hash = ?';
       var values = [getvars.wnr,getvars.hash];
       var template1 = 'Die Änderung ist leider fehlgeschlagen.';
-      var template2 = 'Sie erhalten erst ab dem kommenden September wieder Bodenfrostwarnungen.';
+      var template2 = 'Sie erhalten erst ab dem kommenden Mai wieder Bodenfrostwarnungen.';
    }
    else
    {
@@ -151,12 +151,12 @@ exports.checkDewpoint = function()
                   {
                      var text2 = text + "\n\n" +
                                  "---------------------------------------------------------------\n\n" +
-                                 'Falls Sie erst im kommenden Herbst wieder gewarnt werden wollen, bitte auf folgenden Link klicken:' + "\n" +
+                                 'Falls Sie erst im kommenden Mai (Eisheilige) wieder gewarnt werden wollen, bitte auf folgenden Link klicken:' + "\n" +
                                  'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=nextyear' + "\n\n" +
                                  'Falls Sie überhaupt nicht mehr gewarnt werden wollen, bitte auf folgenden Link klicken:' + "\n" +
                                  'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=disable' + "\n\n";
                      var html2 = html + "<br><br><hr><br>" +
-                                 'Falls Sie erst im kommenden Herbst wieder gewarnt werden wollen, bitte auf folgenden Link klicken:<br>' +
+                                 'Falls Sie erst im kommenden Mai (Eisheilige) wieder gewarnt werden wollen, bitte auf folgenden Link klicken:<br>' +
                                  '<a target="blank" href="https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=nextyear">' +
                                  'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=nextyear</a><br><br>' +
                                  'Falls Sie überhaupt nicht mehr gewarnt werden wollen, bitte auf folgenden Link klicken:<br>' +
