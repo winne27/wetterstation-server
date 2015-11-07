@@ -1,5 +1,5 @@
 <?php
-   include("../dbanmelden.php");
+   include("../dbwetterstation.php");
 
    $art = (array_key_exists('art',$_GET)) ? $_GET['art'] : 'online';
 

@@ -246,7 +246,7 @@ var setGraphicsMonat = function(values,name)
          {
             tickDecimals: 0,
             min: 0,
-            max: 20
+            max: 50
          }
       };
    };

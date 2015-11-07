@@ -63,11 +63,11 @@ exports.logConnectionIP = function(http,ip,query)
             var values = JSON.parse(data);
             if (query.client == 'Browser')
             {
-               mylog(query.client + " connected from " + ip + " " + values.country + " - " + values.region + " - " + values.city + " - " + values.isp);
+               mylog(query.client + ", App " + query.appver + ", " + ip + ", " + values.country + " - " + values.region + " - " + values.city + " - " + values.isp);
             }
             else
             {
-               mylog(query.client + " on " + query.model + " with " + query.platform + " " + query.version + " connected from " + ip + " " + values.country + " - " + values.region + " - " + values.city + " - " + values.isp);
+               mylog(query.client + ", " + query.model + ", " + query.platform + " " + query.version + ", App " + query.appver + ", " + ip + ", " + values.country + " - " + values.region + " - " + values.city + " - " + values.isp);
             }
          }
          catch(e)

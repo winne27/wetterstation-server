@@ -19,6 +19,7 @@ function sendRadar(ios)
 
 function getRadar(doEmit,ios)
 {
+   mylog('getRadar started');
    async.series(
    {
       radar: function(callback)
@@ -66,30 +67,30 @@ function getRadar(doEmit,ios)
       ctx.drawImage(satImg,0,0,312,312);
       ctx.drawImage(radarImg,0,0,312,312);
       ctx.strokeStyle = 'black';
-      ctx.font = 'bold 12px Verdana';
+      ctx.font = 'bold 13px Verdana';
       ctx.textAlign = 'center';
-      ctx.fillStyle = 'white';
+      ctx.fillStyle = '#993300';
       // Rhauderfehn
       ctx.beginPath();
       ctx.arc(156, 156, 4, 0, 2*Math.PI);
       ctx.lineWidth = 1;
       ctx.fill();
       ctx.stroke();
-      ctx.fillText('Rhauderfehn',156,148);
+      ctx.fillText('Rhauderfehn',188,172);
       // Amsterdam
       ctx.beginPath();
       ctx.arc(60, 208, 4, 0, 2*Math.PI);
       ctx.lineWidth = 1;
       ctx.fill();
       ctx.stroke();
-      ctx.fillText('Amsterdam',60,200);
+      ctx.fillText('Amsterdam',76,223);
       // Hannover
       ctx.beginPath();
       ctx.arc(242, 208, 4, 0, 2*Math.PI);
       ctx.lineWidth = 1;
       ctx.fill();
       ctx.stroke();
-      ctx.fillText('Hannover',242,200);
+      ctx.fillText('Hannover',242,223);
       // Oberhausen
       ctx.beginPath();
       ctx.arc(140, 298, 4, 0, 2*Math.PI);

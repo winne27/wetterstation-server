@@ -121,3 +121,12 @@ exports.satUrl ='http://api.wunderground.com/api/0d87505114cceb6c/satellite/imag
 exports.radarUrl = 'http://api.wunderground.com/api/0d87505114cceb6c/radar/image.png?centerlat=53.15&centerlon=7.55&radunits=km&radius=280&width=312&height=312&newmaps=0';
 exports.hourlyUrl = 'http://api.wunderground.com/api/0d87505114cceb6c/hourly10day/lang:DL/q/Germany/Ostrhauderfehn.json';
 exports.tenDayUrl = 'http://api.wunderground.com/api/0d87505114cceb6c/forecast10day/lang:DL/q/Germany/Ostrhauderfehn.json';
+
+exports.nightImgs = [
+"nt_clear",
+"nt_mostlycloudy",
+"nt_mostlysunny",
+"nt_partlycloudy",
+"nt_partlysunny",
+"nt_sunny"
+];

@@ -1,4 +1,4 @@
-var http     = require('http');
+﻿var http     = require('http');
 var params   = require('./params');
 var funcs    = require('./functions');
 var events   = require('./eventEmitter');
@@ -28,6 +28,7 @@ String.prototype.lpad = function(padString, length)
 
 function getTenDay(doEmit,ios)
 {
+   mylog('getTenDay started');
    http.get(params.tenDayUrl,function(res)
    {
       var data1 = '';
@@ -71,10 +72,13 @@ function parseTenDay(data)
       var day = data.forecast.simpleforecast.forecastday[i];
       var dateInternal = day.date.year + '-' + day.date.month.toString().lpad('0',2) + '-' + day.date.day.toString().lpad('0',2);
       var datestring = day.date.weekday_short + '.' +  day.date.day;
+      day.avewind.dir = day.avewind.dir.replace('Südwest','SW');
 
       checkNewValueTenDay(dateInternal,'ForecastDateInternal',i);
       checkNewValueTenDay(datestring,'ForecastDatestring',i);
       //checkNewValueTenDay(day.avehumidity + "%",'ForecastHumidity',i);
+      day.avewind.dir = day.avewind.dir.replace('Südwest','SW');
+      day.avewind.dir = day.avewind.dir.replace('Ost-Südost','OSO');
       checkNewValueTenDay(day.avewind.dir,'ForecastWindDir',i);
       checkNewValueTenDay(day.avewind.kph,'ForecastWindSpeed',i);
       checkNewValueTenDay(day.maxwind.kph,'ForecastWindGust',i);
@@ -84,6 +88,7 @@ function parseTenDay(data)
       checkNewValueTenDay(day.conditions,'ForecastConditions',i);
       checkNewValueTenDay(day.icon,'ForecastIcon',i);
       checkNewValueTenDay(day.qpf_allday.mm + "mm",'ForecastQpf',i);
+
    }
 }
 
@@ -103,6 +108,7 @@ function checkNewValueTenDay(value,name,i)
 
 function getHourly(doEmit,ios)
 {
+   mylog('getHourly started');
    http.get(params.hourlyUrl,function(res)
    {
       var data = '';
@@ -155,10 +161,32 @@ function parseHourly(data)
       }
       checkNewValueHourly(entry.condition,'HourlyCondition',day,hour);
       var icon = entry.icon_url.split('/').pop().split('.')[0];
+
+      if (icon.substr(0,3) === 'nt_')
+      {
+         var imgExists = false;
+         for (var i in params.nightImgs)
+         {
+            if (params.nightImgs[i] === icon)
+            {
+               imgExists = true;
+               break;
+            }
+         }
+         if (!imgExists)
+         {
+            icon = icon.substr(3);
+         }
+      }
+
       checkNewValueHourly(icon,'HourlyIcon',day,hour);
       checkNewValueHourly(entry.pop,'HourlyPop',day,hour);
       checkNewValueHourly(entry.qpf.metric,'HourlyQpf',day,hour);
       checkNewValueHourly(entry.temp.metric,'HourlyTemp',day,hour);
+
+      entry.wdir.dir = entry.wdir.dir.replace('Südwest','SW');
+      entry.wdir.dir = entry.wdir.dir.replace('Ost-Südost','OSO');
+
       checkNewValueHourly(entry.wdir.dir,'HourlyWindDir',day,hour);
       checkNewValueHourly(entry.wspd.metric,'HourlyWindSpeed',day,hour);
    }

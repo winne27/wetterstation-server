@@ -126,7 +126,7 @@
          //$moon = new Solaris\MoonPhase(date());
          $nextNewMoon = ($moon->new_moon() > $jetzt) ?  $moon->new_moon() : $moon->next_new_moon();
          $nextFullMoon = ($moon->full_moon() > $jetzt) ?  $moon->full_moon() : $moon->next_full_moon();
-         $output['values']['Nextnewmoon'] = date( 'j. M H:i:s', $nextNewMoon );
+         $output['values']['Nextnewmoon'] = date( 'j. M. H:i:s', $nextNewMoon );
          $output['values']['Nextfullmoon'] = date( 'j. M. H:i:s', $nextFullMoon );
 
          $enMonths = array('Mar','May.','Oct','Dec');

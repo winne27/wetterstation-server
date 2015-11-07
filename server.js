@@ -13,6 +13,7 @@ var qs = require('querystring');
 var events = require('./eventEmitter');
 var localEmitter = events.localEmitter;
 var initCompleteCount = 0;
+//var initCompleteMax = 1;
 var initCompleteMax = 4;
 var mylog = funcs.mylog;
 
@@ -26,7 +27,7 @@ var server = http.createServer(function(request, response)
          //funcs.mylog("trigger received");
          response.writeHead(200, {'Content-Type': 'text/plain'});
          response.end();
-         setTimeout(function(){fetch.fetchAllTrigger(ios)},3000);
+         setTimeout(function(){fetch.fetchAllTrigger(ios)},9000);
          break;
       case '/vars':
          var varshow = url.parse(request.url).search.substr(1);
@@ -135,6 +136,7 @@ funcs.mylog('Server gestartet');
 
 // Read data from DB into buffer
 fetch.fetchAllInit(ios,true);
+
 radar.getRadar(false);
 forecast.getTenDay(false);
 forecast.getHourly(false);

@@ -1,23 +1,20 @@
 var params   = require('./params');
-var jsdom    = require('jsdom').jsdom;
+var jsdom    = require('jsdom');
 var funcs    = require('./functions');
 var events   = require('./eventEmitter');
 var localEmitter = events.localEmitter;
-
-var html = '<!doctype html><html><head></head><body></body></html>';
-document = jsdom(html);
-window = document.parentWindow;
-
+window = jsdom.jsdom().defaultView;
+document = window.document;
 jQuery = require('jquery');
 $ = jQuery;
 
-var flot = require('flot');
-//flot.jQuery = $;
-require ('flot/jquery.flot.valuelabels.js');
 var graphicsBuffer = {};
 var setGraphics = {};
 var subfunc = {};
 var graphicsBuild = 0;
+var flot = require('flot');
+require ('flot/jquery.flot.valuelabels.js');
+var placeholder = window.document.createElement('div');
 
 for (i in params.graphicTypes)
 {
@@ -27,9 +24,9 @@ subfunc['Monats'] = require('./graphicsMonats');
 
 function doPlot(emitMethod,values,type,name,signalInitComplete)
 {
+   //console.log(type + ' - ' + name);
    if (!document.getElementById('grafik' + type + name))
    {
-      var placeholder = document.createElement('div');
       placeholder.id = 'grafik' + type + name;
       placeholder.style.width = params.width;
       placeholder.style.height = params.height;
@@ -50,7 +47,6 @@ function doPlot(emitMethod,values,type,name,signalInitComplete)
          if (graphicsBuild == params.graphicsCount)
          {
             localEmitter.emit('initComplete');
-            //doPlotAll(io.sockets.in('all'),fetch.newValues,startListening,fetch.historyValues);
          }
       }
       else
@@ -71,9 +67,10 @@ function doPlotReal(type,name,values,datum)
    plotdata.options.xaxis.font = params.tickfont;
    plotdata.options.yaxis.font = params.tickfont;
 
+      //jQuery('#grafik' + type + name),
    var flotplot = $.plot
    (
-      $('#grafik' + type + name),
+      jQuery(placeholder),
       data,
       options
    );
@@ -181,7 +178,6 @@ function doPlotMonats(monat,historyValues,emitMethod)
    }
    //console.log(graphicsBuffer.Monats);
 }
-
 exports.sendAllGraphics = sendAllGraphics;
 exports.doPlotAll = doPlotAll;
 exports.doPlot = doPlot;

@@ -115,6 +115,7 @@ exports.checkDewpoint = function()
       {
          funcs.mylog('Fehler beim Select dewpoint:');
          console.log(err);
+         db.end();
       }
       else
       {
@@ -174,9 +175,13 @@ exports.checkDewpoint = function()
                      });
                      /* */
                   }
+                  db.end();
                }
-               db.end();
             });
+         }
+         else
+         {
+            db.end();
          }
       }
    });
