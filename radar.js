@@ -101,8 +101,11 @@ function getRadar(doEmit, ios) {
                     localEmitter.emit('initComplete');
                 }
             } catch (err) {
-                mylog('error radar/sat image creating');
-                mylog(err.message);
+                mylog('error radar/sat image creating: ' + err.message);
+                if (!doEmit)
+                {
+                    localEmitter.emit('initComplete');
+                }
             }
         });
 }
