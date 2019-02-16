@@ -71,6 +71,7 @@ var setGraphicsJahr = function(values, name) {
                 color: 'blue',
                 valueLabels: {
                     show: true,
+                    valign: "below",
                     font: "7pt san-serif",
                     decimals: 0
                 }
@@ -229,7 +230,8 @@ var setGraphicsJahr = function(values, name) {
                 points: { show: true, fill: false, radius: 3 },
                 valueLabels: {
                     show: true,
-                    decimals: 0
+                    decimals: 0,
+                    valign: "below"
                 }
             },
             xaxis: xaxis,
@@ -287,8 +289,13 @@ var setGraphicsJahr = function(values, name) {
             }
         };
     }
+    
 
-    create[name](values);
-    return { data: data, options: options };
+    if (typeof create[name] === 'undefined') {
+    	return false;
+    } else {
+	    create[name](values);
+	    return { data: data, options: options };
+    }
 }
 exports.set = setGraphicsJahr;

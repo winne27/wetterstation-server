@@ -1,6 +1,8 @@
 var params = require('./params');
+var globals  = require('./globals');
 var jsdom = require('jsdom');
 var funcs = require('./functions');
+var mylog = funcs.mylog;
 var events = require('./eventEmitter');
 var localEmitter = events.localEmitter;
 window = jsdom.jsdom().defaultView;
@@ -23,77 +25,88 @@ subfunc['Monats'] = require('./graphicsMonats');
 
 function doPlot(emitMethod, values, type, name, signalInitComplete) {
     //console.log(type + ' - ' + name);
-    if (!document.getElementById('grafik' + type + name)) {
-        placeholder.id = 'grafik' + type + name;
-        placeholder.style.width = params.width;
-        placeholder.style.height = params.height;
-        document.body.appendChild(placeholder);
-    }
-
-    var datum = values.special.Datum;
-    if (emitMethod !== false && datum < funcs.getHeute[type]() && typeof(graphicsBuffer[type][name][datum]) != 'undefined') {
-        emitMethod.emit('graphic', graphicsBuffer[type][name][datum]);
-    } else {
-        doPlotReal(type, name, values, datum);
-        if (signalInitComplete) {
-            graphicsBuild++;
-            if (graphicsBuild == params.graphicsCount) {
-                localEmitter.emit('initComplete');
-            }
-        } else {
-            if (emitMethod !== false) {
-                emitMethod.emit('graphic', graphicsBuffer[type][name][datum]);
-            }
-        }
-    }
+	try {
+	    if (!document.getElementById('grafik' + type + name)) {
+	        placeholder.id = 'grafik' + type + name;
+	        placeholder.style.width = params.width;
+	        placeholder.style.height = params.height;
+	        document.body.appendChild(placeholder);
+	    }
+	    var datum = values.special.Datum;
+	    if (emitMethod !== false && datum < funcs.getHeute[type]() && 
+	   		typeof(graphicsBuffer[type][name]) != 'undefined' &&	
+	   		typeof(graphicsBuffer[type][name][datum]) != 'undefined') {
+	        emitMethod.emit('graphic', graphicsBuffer[type][name][datum]);
+	    } else {
+	        doPlotReal(type, name, values, datum);
+	        if (signalInitComplete) {
+	            graphicsBuild++;
+	            if (graphicsBuild == params.graphicsCount) {
+	                localEmitter.emit('initComplete', 'Graphics');
+	            }
+	        } else {
+	            if (emitMethod !== false && typeof graphicsBuffer[type][name] !== 'undefined' && typeof graphicsBuffer[type][name][datum] !== 'undefined') {
+	                emitMethod.emit('graphic', graphicsBuffer[type][name][datum]);
+	            }
+	        }
+	    }
+	} catch(e) {
+		mylog('Error with type ' + type + ': ' + e.message); 
+	}
 }
 
 function doPlotReal(type, name, values, datum) {
-    var plotdata = subfunc[type].set(values, name);
-    var data = plotdata.data;
-    var options = plotdata.options;
-    plotdata.options.grid = params.grid;
-    plotdata.options.xaxis.font = params.tickfont;
-    plotdata.options.yaxis.font = params.tickfont;
-
-    //jQuery('#grafik' + type + name),
-    var flotplot = $.plot(
-        jQuery(placeholder),
-        data,
-        options
-    );
-    var nodeCanvas = flotplot.getCanvas();
-
-    var stream = nodeCanvas.toDataURL();
-    //console.log(stream);
-    if (typeof(graphicsBuffer[type]) == 'undefined') graphicsBuffer[type] = {};
-    if (typeof(graphicsBuffer[type][name]) == 'undefined') graphicsBuffer[type][name] = {};
-
-    graphicsBuffer[type][name][datum] = {
-        stream: stream,
-        Datum: datum,
-        id: 'grafik' + type + name,
-        type: type
-    };
+    //mylog("type = " + type);
+	var plotdata;
+    if (plotdata = subfunc[type].set(values, name)) {
+	    var data = plotdata.data;
+	    var options = plotdata.options;
+	    plotdata.options.grid = params.grid;
+	    plotdata.options.xaxis.font = params.tickfont;
+	    plotdata.options.yaxis.font = params.tickfont;
+	
+	    //jQuery('#grafik' + type + name),
+	    var flotplot = $.plot(
+	        jQuery(placeholder),
+	        data,
+	        options
+	    );
+	    var nodeCanvas = flotplot.getCanvas();
+	
+	    var stream = nodeCanvas.toDataURL();
+	    //console.log(stream);
+	    if (typeof(graphicsBuffer[type]) == 'undefined') graphicsBuffer[type] = {};
+	    if (typeof(graphicsBuffer[type][name]) == 'undefined') graphicsBuffer[type][name] = {};
+	
+	    graphicsBuffer[type][name][datum] = {
+	        stream: stream,
+	        Datum: datum,
+	        id: 'grafik' + type + name,
+	        type: type
+	    };
+	}
 }
 
-function doPlotAll(emitMethod, values, signalInitComplete, historyValues) {
+function doPlotAll(emitMethod, values, signalInitComplete) {
     for (var i in params.graphicTypes) {
         var type = params.graphicTypes[i];
         graphicsBuffer[type] = {};
         var heute = funcs.getHeute[type]();
-        for (var j in params.graphicNames) {
-            var name = params.graphicNames[j];
+        var graphicNames = (type == 'JahreBisHeute') ? params.graphicNamesUntilToday : params.graphicNames;
+        for (var j in graphicNames) {
+            var name = graphicNames[j];
             doPlot(emitMethod, values[type], type, name, signalInitComplete);
         }
     }
 }
 
-function sendAllGraphics(ios) {
+function sendAllGraphics(target, JahreBisHeute) {
     for (var type in graphicsBuffer) {
         if (type == 'Monats') continue;
         for (var name in graphicsBuffer[type]) {
-            ios.sockets.emit('graphic', graphicsBuffer[type][name][funcs.getHeute[type]()]);
+            if (type != 'JahreBisHeute' || JahreBisHeute) {
+                target.emit('graphic', graphicsBuffer[type][name][funcs.getHeute[type]()]);
+            }
         }
     }
 }
@@ -106,7 +119,7 @@ function sendMonatsGraph(socket, data) {
     }
 }
 
-function doPlotMonats(monat, historyValues, emitMethod) {
+function doPlotMonats(monat, values, emitMethod) {
     monatExt = (monat < 10) ? '0' + monat : monat;
     var values = {};
     values.points = {};
@@ -124,9 +137,9 @@ function doPlotMonats(monat, historyValues, emitMethod) {
         values.points[name] = [];
         for (var jahr = values.values.Von; jahr <= values.values.Bis; jahr++) {
             //console.log(jahr + ' ' + monatExt + ' ' + name);
-            for (var i in historyValues.Jahr[jahr].points[name]) {
-                if (historyValues.Jahr[jahr].points[name][i][0] == monat) {
-                    var value = historyValues.Jahr[jahr].points[name][i][1];
+            for (var i in globals.historyValues.Jahr[jahr].points[name]) {
+                if (globals.historyValues.Jahr[jahr].points[name][i][0] == monat) {
+                    var value = globals.historyValues.Jahr[jahr].points[name][i][1];
                     if (name == 'windSpeedMax') {
                         values.values.WindMax = Math.max(values.values.WindMax, value)
                     }
@@ -154,4 +167,3 @@ exports.doPlotAll = doPlotAll;
 exports.doPlot = doPlot;
 exports.sendMonatsGraph = sendMonatsGraph;
 exports.doPlotMonats = doPlotMonats;
-exports.graphicsBuffer = graphicsBuffer;

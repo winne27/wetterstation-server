@@ -273,8 +273,39 @@ var setGraphicsMonat = function(values, name) {
             }
         };
     }
+ 
+    // --------------------------------------------------
+    // Feinstaub
+    // --------------------------------------------------
+    create['Feinstaub'] = function(values) {
+        data = [{
+                data: values.points.Feinstaub.pm10_max,
+                color: 'blue'
+            },{
+		    	data: values.points.Feinstaub.pm25_max,
+		    	color: 'red'
+			}];
 
-    create[name](values);
-    return { data: data, options: options };
+        options = {
+            series: {
+                lines: {
+                    lineWidth: 1,
+                    show: true
+                }
+            },
+            xaxis: xaxis,
+            yaxis: {
+                min: 0,
+                tickDecimals: 0
+            }
+        };
+    };
+    
+    if (typeof create[name] === 'undefined') {
+    	return false;
+    } else {
+	    create[name](values);
+	    return { data: data, options: options };
+    }
 }
 exports.set = setGraphicsMonat;

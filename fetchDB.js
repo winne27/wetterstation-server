@@ -1,15 +1,22 @@
 var https = require("https");
 var params = require('./params');
+var globals  = require('./globals');
 var graphics = require('./graphics');
 var funcs = require('./functions');
+var mysql = require('mysql');
+var dbacc = require('/etc/auth/wetterstation.js');
 
 var oldValues = {};
 var newValues = {};
-var historyValues = {};
 
 for (var i in params.types) {
-    historyValues[params.types[i]] = {};
+    globals.historyValues[params.types[i]] = {};
 }
+
+globals.historyValues.motd = {};
+globals.historyValues.motd.show = false;
+globals.historyValues.motd.long = '';
+globals.historyValues.motd.short = '';
 
 var fetchCalls = params.types.length;
 var fetchFinished = 0;
@@ -51,46 +58,47 @@ function httpsGet(type, ios, initBuffer, signalInitComplete) {
                 data += chunk;
             });
             res.on('end', function() {
-                if (initBuffer) {
-                    oldValues[type] = JSON.parse(data);
-                    newValues[type] = JSON.parse(data);
-
-                    if (type == 'Akt') {
-                        var dewpoint = newValues.Akt.values.Dewpoint.replace(',', '.');
-                        for (var i = 0; i < params.frostWarning.length; i++) {
-                            if (dewpoint < params.frostWarning[i].dewpoint) {
-                                break;
-                            }
-                        }
-                        newValues.Akt.special.soilfrostProb = params.frostWarning[i].prob;
-                        oldValues.Akt.special.soilfrostProb = params.frostWarning[i].prob;
-                        newValues.Akt.special.soilfrostHtml = params.frostWarning[i].html;
-                        oldValues.Akt.special.soilfrostHtml = params.frostWarning[i].html;
-                    }
-
-                    if (type == 'Jahr') {
-                        var jahr = funcs.getHeute.Jahr();
-                        historyValues[type][jahr] = JSON.parse(JSON.stringify(newValues[type]));
-                    }
-                    fetchFinished++;
-                    if (fetchFinished == fetchCalls) {
-                        graphics.doPlotAll(ios.sockets.in('all'), newValues, signalInitComplete, historyValues);
-                    }
-                } else {
-                    newValues[type] = JSON.parse(data);
-
-                    if (type == 'Akt') {
-                        for (var i = 0; i < params.frostWarning.length; i++) {
-                            if (newValues.Akt.values.Dewpoint.replace(',', '.') < params.frostWarning[i].dewpoint) {
-                                break;
-                            }
-                        }
-                        newValues.Akt.special.soilfrostProb = params.frostWarning[i].prob;
-                        newValues.Akt.special.soilfrostHtml = params.frostWarning[i].html;
-                    }
-
-                    sendData(ios, type);
-                }
+            	newValues[type] = JSON.parse(data);
+            	if (typeof newValues[type].error == 'undefined') {
+	                if (initBuffer) {
+	                    oldValues[type] = JSON.parse(data);
+	
+	                    if (type == 'Akt') {
+	                        var dewpoint = newValues.Akt.values.Dewpoint.replace(',', '.');
+	                        for (var i = 0; i < params.frostWarning.length; i++) {
+	                            if (dewpoint < params.frostWarning[i].dewpoint) {
+	                                break;
+	                            }
+	                        }
+	                        newValues.Akt.special.soilfrostProb = params.frostWarning[i].prob;
+	                        oldValues.Akt.special.soilfrostProb = params.frostWarning[i].prob;
+	                        newValues.Akt.special.soilfrostHtml = params.frostWarning[i].html;
+	                        oldValues.Akt.special.soilfrostHtml = params.frostWarning[i].html;
+	                    }
+	
+	                    if (type == 'Jahr') {
+	                        var jahr = funcs.getHeute.Jahr();
+	                        globals.historyValues[type][jahr] = JSON.parse(JSON.stringify(newValues[type]));
+	                    }
+	                    fetchFinished++;
+	                    if (fetchFinished == fetchCalls) {
+	                        var emitMethod = (type == 'JahreBisHeute') ? ios.sockets.in('v2') : ios.sockets.in('all');
+	                        graphics.doPlotAll(emitMethod, newValues, signalInitComplete);
+	                    }
+	                } else {
+	                    if (type == 'Akt') {
+	                        for (var i = 0; i < params.frostWarning.length; i++) {
+	                            if (newValues.Akt.values.Dewpoint.replace(',', '.') < params.frostWarning[i].dewpoint) {
+	                                break;
+	                            }
+	                        }
+	                        newValues.Akt.special.soilfrostProb = params.frostWarning[i].prob;
+	                        newValues.Akt.special.soilfrostHtml = params.frostWarning[i].html;
+	                    }
+	
+	                    sendData(ios, type);
+	                }
+            	}
             });
         }
     }).on('error', function(e) {
@@ -101,13 +109,13 @@ function httpsGet(type, ios, initBuffer, signalInitComplete) {
 function sendSpecificData(socket, data, doMonats) {
     var type = data.type;
 
-    if (type == 'Jahr' && typeof(historyValues[type][data.dateString]) != 'undefined') {
+    if (type == 'Jahr' && typeof(globals.historyValues[type][data.dateString]) != 'undefined') {
         var emitdata = {};
         emitdata[type] = {};
-        emitdata[type].values = historyValues[type][data.dateString].values;
-        emitdata[type].special = historyValues[type][data.dateString].special;
+        emitdata[type].values = globals.historyValues[type][data.dateString].values;
+        emitdata[type].special = globals.historyValues[type][data.dateString].special;
         if (socket) socket.emit('data', emitdata);
-        emitdata[type].points = historyValues[type][data.dateString].points;
+        emitdata[type].points = globals.historyValues[type][data.dateString].points;
         for (index in params.graphicNames) {
             graphics.doPlot(socket, emitdata[type], type, params.graphicNames[index], false);
         }
@@ -141,12 +149,12 @@ function sendSpecificData(socket, data, doMonats) {
                         emitdata[type].values = response[type].values;
                         emitdata[type].special = response[type].special;
                         if (type == 'Jahr') {
-                            historyValues[type][response[type].special.Datum] = JSON.parse(data);
+                            globals.historyValues[type][response[type].special.Datum] = JSON.parse(data);
                             if (doMonats) {
                                 anzJahre--;
                                 if (anzJahre == 0) {
                                     for (var i = 1; i < 13; i++) {
-                                        graphics.doPlotMonats(i, historyValues, false);
+                                        graphics.doPlotMonats(i, globals.historyValues, false);
                                     }
                                 }
                             }
@@ -180,11 +188,12 @@ function sendData(ios, type) {
         for (var index3 in newValues[type][index2]) {
             if (index2 == 'points') {
                 for (var index4 in newValues[type][index2][index3]) {
+                	//console.log('indexerei:' +)
                     if (typeof(oldValues[type][index2][index3][index4]) == 'undefined' || newValues[type][index2][index3][index4][1] != oldValues[type][index2][index3][index4][1]) {
-                        graphicsChanged[params.graphicsRel[index3]] = true;
+                    	graphicsChanged[params.graphicsRel[index3]] = true;
                         if (type == 'Jahr') {
                             var jahr = funcs.getHeute.Jahr();
-                            historyValues.Jahr[jahr].points[index3][index4] = newValues.Jahr.points[index3][index4];
+                            globals.historyValues.Jahr[jahr].points[index3][index4] = newValues.Jahr.points[index3][index4];
                         }
                     }
                 }
@@ -195,8 +204,8 @@ function sendData(ios, type) {
 
                     if (type == 'Jahr') {
                         var jahr = funcs.getHeute.Jahr();
-                        if (!(index2 in historyValues[type][jahr])) historyValues[type][jahr][index2] = {};
-                        historyValues[type][jahr][index2][index3] = newValues[type][index2][index3];
+                        if (!(index2 in globals.historyValues[type][jahr])) globals.historyValues[type][jahr][index2] = {};
+                        globals.historyValues[type][jahr][index2][index3] = newValues[type][index2][index3];
                     }
                 }
             }
@@ -217,28 +226,76 @@ function sendData(ios, type) {
 
     var graphicChanged = false;
     for (name in graphicsChanged) {
-        graphics.doPlot(ios.to('all'), newValues[type], type, name, false);
+        if (type == 'JahreBisHeute' && params.graphicNamesUntilToday.indexOf(name) < 0) continue;
+        var emitMethod = (type == 'JahreBisHeute') ? ios.sockets.in('v2') : ios.sockets.in('all');
+        graphics.doPlot(emitMethod, newValues[type], type, name, false);
         graphicChanged = true;
     }
 
     if (graphicChanged && type == 'Jahr') {
         var monat = new Date().getMonth() + 1;
-        graphics.doPlotMonats(monat, historyValues, ios.sockets.in('all'));
+        graphics.doPlotMonats(monat, globals.historyValues, ios.sockets.in('all'));
     }
     oldValues[type] = JSON.parse(JSON.stringify(newValues[type]));
 }
 
-function sendOldData(ios) {
-    ios.sockets.in('all').emit('data', oldValues);
+function fetchMotd(ios) {
+	//return;
+    try {
+        var db = mysql.createConnection(dbacc.dbAccount);
+        db.query('SELECT * from wetterstation.motd', function(err, rows) {
+        try {
+	            if (err) throw(err);
+	            
+	            if (rows.length > 0) {
+		            var newMotd = {
+		            	show: rows[0].show ? true : false,
+		            	long: rows[0].long,
+		            	short: rows[0].short
+		            }
+	            } else {
+	            	var newMotd = {show: false};
+	            }
+	
+	            db.end();
+	 
+	            if (newMotd != globals.historyValues.motd) {
+	            	if (!newMotd.show) {
+	            		var newMotd = {show: false};
+	            	}
+	            	ios.sockets.in('all').emit('motd', newMotd);
+	            	ios.sockets.in('widget').emit('motd', newMotd);
+	            	globals.historyValues.motd = newMotd;
+	            }
+        	} catch(e) {
+        		funcs.mylog(e.message);
+        	}    
+        });
+    } catch(e) {
+    	funcs.mylog(e.message);
+    }    
+}
+
+function sendOldData(target) {
+    target.emit('data', oldValues);
+    
+	if (globals.historyValues.motd.show) {
+		target.emit('motd', globals.historyValues.motd);
+	}
+    
 }
 
 function sendActData(socket) {
     //ios.sockets.in('widget').emit('data',oldValues.Akt.values);
     socket.emit('data', oldValues.Akt.values);
+
+	if (globals.historyValues.motd.show) {
+		socket.emit('motd', globals.historyValues.motd);
+	}
 }
 
 var createPlots = function(ios) {
-    graphics.doPlotAll(ios.to('all'), newValues, false, historyValues);
+    graphics.doPlotAll(ios.to('all'), newValues, false);
 }
 
 exports.fetchAllInit = fetchAllInit;
@@ -246,6 +303,4 @@ exports.fetchAllTrigger = fetchAllTrigger;
 exports.sendOldData = sendOldData;
 exports.sendActData = sendActData;
 exports.sendSpecificData = sendSpecificData;
-//exports.pollNewData = pollNewData;
-exports.historyValues = historyValues;
-exports.newValues = newValues;
+exports.fetchMotd = fetchMotd;

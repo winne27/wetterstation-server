@@ -1,3 +1,5 @@
+var funcs    = require('./functions');
+var mylog = funcs.mylog;
 var setGraphicsMonats = function(values, name) {
     var create = [];
     var options;
@@ -215,6 +217,7 @@ var setGraphicsMonats = function(values, name) {
         };
     }
 
+    //mylog("name = " + name);
     create[name](values);
     return { data: data, options: options };
 }

@@ -9,6 +9,13 @@ var setGraphicsJahre = function(values, name) {
         min: values.values.Von - 0.25,
         max: values.values.Bis + 0.25
     };
+    
+    var xaxisBars = {
+    		tickSize: 1,
+    		tickDecimals: 0,
+    		min: values.values.Von - 0.5,
+    		max: values.values.Bis + 0.5
+    };
 
     // --------------------------------------------------
     // Sonnenenergie
@@ -26,7 +33,8 @@ var setGraphicsJahre = function(values, name) {
                 },
                 valueLabels: {
                     show: true,
-                    font: "7pt san-serif"
+                    font: "6pt san-serif",
+                    rotate: -90
                 }
             },
             bars: {
@@ -35,7 +43,7 @@ var setGraphicsJahre = function(values, name) {
                 lineWidth: 1,
                 fillColor: '#ffff00'
             },
-            xaxis: xaxis,
+            xaxis: xaxisBars,
             yaxis: {
                 min: 0,
                 max: 8500
@@ -54,7 +62,7 @@ var setGraphicsJahre = function(values, name) {
                     show: true,
                     valign: "below",
                     font: "7pt san-serif",
-                    useDecimalComma: true
+                    decimals: 0
                 }
             },
             {
@@ -63,7 +71,7 @@ var setGraphicsJahre = function(values, name) {
                 valueLabels: {
                     show: true,
                     font: "7pt san-serif",
-                    useDecimalComma: true
+                    decimals: 1
                 }
             },
             {
@@ -73,7 +81,7 @@ var setGraphicsJahre = function(values, name) {
                     show: true,
                     valign: "above",
                     font: "7pt san-serif",
-                    useDecimalComma: true
+                    decimals: 0
                 }
             }
         ];
@@ -132,7 +140,7 @@ var setGraphicsJahre = function(values, name) {
                 },
                 points: { show: true, fill: false, radius: 3 }
             },
-            xaxis: xaxis,
+            xaxis: xaxisBars,
             yaxis: {
                 tickSize: 20,
                 tickDecimals: 0,
@@ -205,7 +213,7 @@ var setGraphicsJahre = function(values, name) {
                 align: "center",
                 barWidth: 0.7
             },
-            xaxis: xaxis,
+            xaxis: xaxisBars,
             yaxis: {
                 tickDecimals: 0,
                 min: 0,
@@ -292,7 +300,11 @@ var setGraphicsJahre = function(values, name) {
         };
     }
 
-    create[name](values);
-    return { data: data, options: options };
+    if (typeof create[name] === 'undefined') {
+    	return false;
+    } else {
+	    create[name](values);
+	    return { data: data, options: options };
+    }
 }
 exports.set = setGraphicsJahre;

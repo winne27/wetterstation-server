@@ -105,7 +105,7 @@ var setGraphicsTag = function(values, name) {
                 tickSize: 5,
                 tickDecimals: 0,
                 min: Math.floor((+values.values.PressMin - 5) / 10) * 10,
-                max: Math.floor((+values.values.PressMax + 5) / 10) * 10
+                max: Math.ceil((+values.values.PressMax + 5) / 10) * 10
             }
         };
     }
@@ -245,7 +245,41 @@ var setGraphicsTag = function(values, name) {
             }
         };
     }
-    create[name](values);
-    return { data: data, options: options };
+    
+    // --------------------------------------------------
+    // Feinstaub
+    // --------------------------------------------------
+    create['Feinstaub'] = function(values) {
+        data = [{
+                data: values.points.Feinstaub.pm10,
+                color: 'blue'
+            },
+            {
+                data: values.points.Feinstaub.pm25,
+                color: 'red'
+            }
+        ];
+
+        options = {
+            series: {
+                lines: {
+                    lineWidth: 1,
+                    show: true
+                }
+            },
+            xaxis: xaxis,
+            yaxis: {
+                min: 0,
+                tickDecimals: 0
+            }
+        };
+    };
+    
+    if (typeof create[name] === 'undefined') {
+    	return false;
+    } else {
+	    create[name](values);
+	    return { data: data, options: options };
+    }
 }
 exports.set = setGraphicsTag;

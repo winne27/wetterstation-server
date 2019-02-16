@@ -1,13 +1,17 @@
 var nodemailer = require('nodemailer');
+var smtpTransport = require('nodemailer-smtp-transport');
 var crypto = require('crypto');
 var funcs = require('./functions');
 var params = require('./params');
-var mailer = nodemailer.createTransport();
+var mailer = nodemailer.createTransport(smtpTransport({
+   host: 'eins.kein-design.de',
+   port: 25
+}));
 var mysql = require('mysql');
 var dbacc = require('/etc/auth/wetterstation.js');
 //var db         = mysql.createConnection(dbacc.dbAccount);
 
-exports.handleRequest = function(ios, data) {
+exports.handleRequest = function(socket, data) {
     funcs.mylog('warnrequest startet for ' + data.email);
     var hash = crypto.randomBytes(12).toString('hex');
     var insData = {
@@ -21,7 +25,7 @@ exports.handleRequest = function(ios, data) {
         if (err) {
             funcs.mylog('Fehler beim Insert:');
             console.log(err);
-            ios.sockets.emit('successWarningEntry', { msg: err, type: data.type, err: true });
+            socket.emit('successWarningEntry', { msg: err, type: data.type, err: true });
         } else {
             mailer.sendMail({
                 from: 'wetterstation@fehngarten.de',
@@ -32,7 +36,7 @@ exports.handleRequest = function(ios, data) {
                 html: 'Um die Anmeldung zu der Bodenfrostwarnung abzuschließen bitte auf den folgenden Link klicken:<br> ' +
                     '<a target="blank" href="https://socken.fehngarten.de/confirm?hash=' + hash + '&wnr=' + result.insertId + '&type=init">https://socken.fehngarten.de/confirm?hash=' + hash + '&wnr=' + result.insertId + '&type=init</a>'
             });
-            ios.sockets.emit('successWarningEntry', { msg: 'erfolgreich eingetragen', type: data.type, err: false });
+            socket.emit('successWarningEntry', { msg: 'erfolgreich eingetragen', type: data.type, err: false });
         }
         db.end();
     });
@@ -97,14 +101,14 @@ exports.confirmRequest = function(response, getvars) {
 }
 
 exports.checkDewpoint = function() {
-    var db = mysql.createConnection(dbacc.dbAccount);
-    db.query('SELECT dewpoint, temp_out from weather order by datetime desc limit 1', function(err, rows) {
-        if (err) {
-            funcs.mylog('Fehler beim Select dewpoint:');
-            console.log(err);
-            db.end();
-        } else {
-            var dewpoint = rows[0].dewpoint;
+    try {
+		var db = mysql.createConnection(dbacc.dbAccount);
+	    db.query('SELECT dewpoint, temp_out from weather order by datetime desc limit 3', function(err, rows) {
+	        if (err) {
+	            throw(err);
+	        } 
+ 
+	        var dewpoint = rows[0].dewpoint;
             var warnIndex = -1;
             var prob = 0;
             for (var i = 0; i < params.frostWarning.length; i++) {
@@ -115,48 +119,54 @@ exports.checkDewpoint = function() {
                 }
             }
             if (prob > 0) {
-                db.query('SELECT email, hash, wnr from warnung where validfrom <= now()', function(err, rows) {
-                    if (err) {
-                        funcs.mylog('Fehler beim Select emails:');
-                        console.log(err);
-                        db.end();
-                    } else {
-                        var text = params.frostWarning[i].text + "\n\nWahrscheinlichkeit für Bodenfrost: " + params.frostWarning[i].prob + '%';
-                        var html = '<body style="font-family: \'Trebuchet MS\', Verdana, sans-serif">' + params.frostWarning[i].html +
-                            '<br><br>Wahrscheinlichkeit für Bodenfrost: <b>' + params.frostWarning[i].prob + '%</b>' +
-                            '<br><br><a target="blank" href="https://www.fehngarten.de/wetter/index.html">Aktuelle Wetterdaten anschauen</a>';
+                db.query('SELECT email, hash, wnr from warnung where validfrom <= now() and type = 1', function(err, rows) {
+                	if (err) {
+        	            throw(err);
+        	        } 
+                	
+                    var text = params.frostWarning[i].text + "\n\nWahrscheinlichkeit für Bodenfrost: " + params.frostWarning[i].prob + '%';
+                    var html = '<body style="font-family: \'Trebuchet MS\', Verdana, sans-serif">' + params.frostWarning[i].html +
+                        '<br><br>Wahrscheinlichkeit für Bodenfrost: <b>' + params.frostWarning[i].prob + '%</b>' +
+                        '<br><br><a target="blank" href="https://www.fehngarten.de/wetter/index.html">Aktuelle Wetterdaten anschauen</a>';
 
-                        for (var j in rows) {
-                            var text2 = text + "\n\n" +
-                                "---------------------------------------------------------------\n\n" +
-                                'Falls Sie erst im kommenden Mai (Eisheilige) wieder gewarnt werden wollen, bitte auf folgenden Link klicken:' + "\n" +
-                                'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=nextyear' + "\n\n" +
-                                'Falls Sie überhaupt nicht mehr gewarnt werden wollen, bitte auf folgenden Link klicken:' + "\n" +
-                                'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=disable' + "\n\n";
-                            var html2 = html + "<br><br><hr><br>" +
-                                'Falls Sie erst im kommenden Mai (Eisheilige) wieder gewarnt werden wollen, bitte auf folgenden Link klicken:<br>' +
-                                '<a target="blank" href="https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=nextyear">' +
-                                'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=nextyear</a><br><br>' +
-                                'Falls Sie überhaupt nicht mehr gewarnt werden wollen, bitte auf folgenden Link klicken:<br>' +
-                                '<a target="blank" href="https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=disable">' +
+                    for (var j in rows) {
+                        var text2 = text + "\n\n" +
+                            "---------------------------------------------------------------\n\n" +
+                            'Falls Sie erst im kommenden Mai (Eisheilige) wieder gewarnt werden wollen, bitte auf folgenden Link klicken:' + "\n" +
+                            'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=nextyear' + "\n\n" +
+                            'Falls Sie überhaupt nicht mehr gewarnt werden wollen, bitte auf folgenden Link klicken:' + "\n" +
+                            'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=disable' + "\n\n";
+                        var html2 = html + "<br><br><hr><br>" +
+                            'Falls Sie erst im kommenden Mai (Eisheilige) wieder gewarnt werden wollen, bitte auf folgenden Link klicken:<br>' +
+                            '<a target="blank" href="https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=nextyear">' +
+                            'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=nextyear</a><br><br>' +
+                            'Falls Sie überhaupt nicht mehr gewarnt werden wollen, bitte auf folgenden Link klicken:<br>' +
+                            '<a target="blank" href="https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=disable">' +
 
-                                'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=disable</a><br><br>';
-                            /* */
-                            mailer.sendMail({
-                                from: 'wetterstation@fehngarten.de',
-                                to: rows[j].email,
-                                subject: 'Bodenfrostwarnung - ' + params.frostWarning[i].prob + '%',
-                                text: text2,
-                                html: html2
-                            });
-                            /* */
-                        }
-                        db.end();
+                            'https://socken.fehngarten.de/confirm?hash=' + rows[j].hash + '&wnr=' + rows[j].wnr + '&type=disable</a><br><br>';
+                        /* */
+                        funcs.mylog('Frostwarnung an ' + rows[j].email + ' geschickt');
+                        sendMail(rows[j].email, 'Bodenfrostwarnung - ' + params.frostWarning[i].prob + '%', text2, html2)
                     }
                 });
-            } else {
-                db.end();
-            }
-        }
-    });
+            } 
+            db.end();
+	    });
+	} catch(e) {
+		funcs.mylog(e.message);
+	}
 }
+
+function sendMail(to, subject, text, html) {
+	try {
+		 mailer.sendMail({
+             from: 'wetterstation@fehngarten.de',
+             to: to,
+             subject: subject,
+             text: text,
+             html: html
+		 })
+	} catch(e) {
+		funcs.mylog('Sendmail error: ' + e.message);
+	}
+} 

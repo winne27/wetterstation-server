@@ -1,9 +1,11 @@
 var http     = require('http');
+var https    = require('https');
 var url      = require('url');
 var fs       = require('fs');
 var io       = require('socket.io');
 var fetch    = require('./fetchDB');
 var graphics = require('./graphics');
+var globals  = require('./globals');
 var params   = require('./params');
 var funcs    = require('./functions');
 var radar    = require('./radar');
@@ -13,12 +15,16 @@ var qs = require('querystring');
 var events = require('./eventEmitter');
 var localEmitter = events.localEmitter;
 var initCompleteCount = 0;
-//var initCompleteMax = 1;
-var initCompleteMax = 4;
+var initCompleteMax = 2;
+//var initCompleteMax = 4;
 var mylog = funcs.mylog;
 
 fs.watchFile('/var/lib/mysql/wetterstation/weather.ibd', (curr, prev) => {
   setTimeout(function(){fetch.fetchAllTrigger(ios)},2000);
+});
+
+fs.watchFile('/var/lib/mysql/wetterstation/motd.ibd', (curr, prev) => {
+    setTimeout(function(){fetch.fetchMotd(ios)},1000);
 });
 
 var server = http.createServer(function(request, response)
@@ -61,47 +67,50 @@ var ios = io(server);
 // handle for the websocket connection from browser
 ios.sockets.on('connection', function(socket)
 {
-   //console.log(socket.handshake.query);
-   funcs.logConnectionIP(http,socket.handshake.headers['x-real-ip'],socket.handshake.query);
+   //mylog(socket.handshake.headers['user-agent']);	
+   funcs.logConnectionIP(http,socket.handshake.headers['x-real-ip'], socket.handshake.query, socket.handshake.headers['user-agent']);
+   //mylog(socket.handshake.query.client + " is connecting from " + socket.handshake.headers['x-real-ip']);
    if (socket.handshake.query.client && socket.handshake.query.client == 'Widget')
    {
       socket.join('widget');
 
       socket.on('sendActData',function(data)
       {
-         mylog('sendActData requested');
+         //mylog('sendActData requested');
          fetch.sendActData(socket);
-      });
-/*
-      socket.on('disconnect',function(data)
-      {
-         funcs.mylog('disconnected widget');
-      });
-*/
+         forecast.sendSomeDays(socket, true);
+     });
    }
    else
    {
       socket.join('all');
-      fetch.sendOldData(ios);
+      var JahreBisHeute = false;
+      if (socket.handshake.query.JahreBisHeute && socket.handshake.query.JahreBisHeute == '1')  {
+          //mylog('client is in room JahreBisHeute');
+          socket.join('JahreBisHeute');
+          JahreBisHeute = true;
+      }
+
+      fetch.sendOldData(socket);
 
       setTimeout(function()
       {
-         graphics.sendAllGraphics(ios);
+         graphics.sendAllGraphics(socket, JahreBisHeute);
       },500);
 
-      forecast.sendHourly(ios, true);
-      forecast.sendTenDay(ios, true);
+      forecast.sendHourly(socket, true);
+      forecast.sendTenDays(socket, true);
 
       setTimeout(function()
       {
-         radar.sendRadar(ios);
+         radar.sendRadar(socket);
       },1000);
 
       socket.on('refresh', function(data)
       {
          funcs.mylog('Refresh requested');
-         fetch.sendOldData(ios);
-         graphics.sendAllGraphics(ios);
+         fetch.sendOldData(socket);
+         graphics.sendAllGraphics(socket, JahreBisHeute);
       });
 
       socket.on('getSpecificData', function(data)
@@ -118,7 +127,7 @@ ios.sockets.on('connection', function(socket)
 
       socket.on('requestWarningEntry',function(data)
       {
-         warnService.handleRequest(ios,data);
+         warnService.handleRequest(socket,data);
       });
 /*
       socket.on('disconnect',function(data)
@@ -131,10 +140,10 @@ ios.sockets.on('connection', function(socket)
 
 // start listening after all buffers are initialised
 // to avoid incomplete data delivering
-localEmitter.on('initComplete',function()
+localEmitter.on('initComplete',function(tag)
 {
    initCompleteCount++;
-   mylog('part completed');
+   mylog(tag + ' completed');
    if (initCompleteCount === initCompleteMax)
    {
       server.listen(params.port);
@@ -148,17 +157,16 @@ funcs.mylog('Server gestartet');
 fetch.fetchAllInit(ios,true);
 
 radar.getRadar(false);
-forecast.getTenDay(false);
-forecast.getHourly(false);
+forecast.getForecast(false);
+fetch.fetchMotd(ios);
 
 setInterval(function()
 {
-   radar.getRadar(true,ios);
+   radar.getRadar(true,ios.sockets.in('all'));
 },900000);
 
 setInterval(function()
 {
-   forecast.getTenDay(true,ios);
-   forecast.getHourly(true,ios);
+   forecast.getForecast(true,ios.sockets.in('all'), ios.sockets.in('widget'));
 },3600000);
 

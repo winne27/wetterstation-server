@@ -1,1 +1,0 @@
-create function http_put returns string soname 'mysql-udf-http.so';

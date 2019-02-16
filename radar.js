@@ -12,11 +12,11 @@ var Canvas = require('canvas'),
 var mylog = funcs.mylog;
 var streamPNG;
 
-function sendRadar(ios) {
-    ios.sockets.in('all').emit('radar', streamPNG);
+function sendRadar(target) {
+    target.emit('radar', streamPNG);
 }
 
-function getRadar(doEmit, ios) {
+function getRadar(doEmit, target) {
     //mylog('getRadar started');
     async.series({
             radar: function(callback) {
@@ -96,15 +96,15 @@ function getRadar(doEmit, ios) {
 
                 streamPNG = canvas.toDataURL();
                 if (doEmit) {
-                    sendRadar(ios);
+                    sendRadar(target);
                 } else {
-                    localEmitter.emit('initComplete');
+                    localEmitter.emit('initComplete', 'Radar');
                 }
             } catch (err) {
                 mylog('error radar/sat image creating: ' + err.message);
                 if (!doEmit)
                 {
-                    localEmitter.emit('initComplete');
+                    localEmitter.emit('initComplete', 'Radar error');
                 }
             }
         });

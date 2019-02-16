@@ -2,6 +2,7 @@ exports.port = 8027;
 exports.minJahr = 2009;
 exports.minMonat = 6;
 exports.maxLastChangeChecks = 6;
+exports.someDays = 4;
 
 exports.sslcert = {
     key: '/etc/ssl/private/bundle/ssl.key',
@@ -9,12 +10,14 @@ exports.sslcert = {
     ca: '/etc/ssl/private/bundle/ca-sha2.pem'
 }
 
-exports.types = ['Akt', 'Tag', 'Monat', 'Jahr', 'Jahre'];
-exports.graphicNames = new Array('Sonne', 'Temperatur', 'Regen', 'Luftdruck', 'Luftfeucht', 'Windmax', 'Windrichtung');
+exports.types = ['Akt', 'Tag', 'Monat', 'Jahr', 'Jahre', 'JahreBisHeute'];
+exports.graphicNames = new Array('Sonne', 'Temperatur', 'Regen', 'Luftdruck', 'Luftfeucht', 'Windmax', 'Windrichtung', 'Feinstaub');
 exports.graphicNamesReduced = new Array('Sonne', 'Temperatur', 'Regen', 'Luftdruck', 'Windmax');
+exports.graphicNamesUntilToday = new Array('Sonne', 'Regen');
 exports.graphicMonats = ['rain', 'sunPower', 'relPressureMin', 'relPressureMax', 'tempOutMin', 'tempOutAvg', 'tempOutMax', 'windSpeedMax'];
-exports.graphicTypes = new Array('Tag', 'Monat', 'Jahr', 'Jahre');
-exports.graphicsCount = this.graphicNames.length * this.graphicTypes.length;
+exports.graphicTypes = new Array('Tag', 'Monat', 'Jahr', 'Jahre', 'JahreBisHeute');
+exports.graphicsCount = this.graphicNames.length * (this.graphicTypes.length - 1) + 2;
+exports.reducedEntities = ['ForecastDateInternal', 'ForecastDatestring', 'ForecastTempMax', 'ForecastTempMin', 'ForecastIcon'];
 exports.width = '307px';
 exports.height = '145px';
 
@@ -57,8 +60,29 @@ exports.graphicsRel = {
     windangle: 'Windrichtung',
     windangle1: 'Windrichtung',
     windangle2: 'Windrichtung',
-    windangle3: 'Windrichtung'
-}
+    windangle3: 'Windrichtung',
+    Feinstaub: 'Feinstaub'
+};
+
+exports.icons = {
+		'clear-day': 'clear',
+		'clear-night': 'nt_clear',
+		rain: 'rain',
+		snow: 'snow',
+		sleet: 'sleet',
+		fog: 'fog',
+		cloudy: 'cloudy',
+		'partly-cloudy-day': 'partlycloudy',
+		'partly-cloudy-night': 'nt_partlycloudy',
+		thunderstorm: 'tstorms',
+		wind: 'cloudy'
+};
+
+exports.precipType = {
+		rain: 'Regen',
+		snow: 'Schnee',
+		sleet: 'Schneeregen'
+};
 
 exports.frostWarning = [{
         dewpoint: -1,
@@ -93,14 +117,8 @@ exports.frostWarning = [{
     {
         dewpoint: 4,
         prob: 10,
-        text: 'Es besteht nur eine sehr geringe Gefahr dass es heute Nacht zu Bodenfrost kommt. Besser aber mal wachsam sein.',
-        html: 'Es besteht nur eine <b>sehr geringe</b> Gefahr dass es heute Nacht zu Bodenfrost kommt. Besser aber mal wachsam sein.'
-    },
-    {
-        dewpoint: 5,
-        prob: 5,
-        text: 'Es besteht nur eine sehr geringe Gefahr dass es heute Nacht zu Bodenfrost kommt. Besser aber mal wachsam sein.',
-        html: 'Es besteht nur eine <b>sehr geringe</b> Gefahr dass es heute Nacht zu Bodenfrost kommt. Besser aber mal wachsam sein.'
+        text: 'Es besteht nur eine sehr geringe Gefahr dass es heute Nacht zu Bodenfrost kommt.',
+        html: 'Es besteht nur eine <b>sehr geringe</b> Gefahr dass es heute Nacht zu Bodenfrost kommt.'
     },
     {
         dewpoint: 99,
@@ -111,8 +129,8 @@ exports.frostWarning = [{
 ];
 exports.satUrl = 'http://api.wunderground.com/api/0d87505114cceb6c/satellite/image.png?lat=53.15&lon=7.55&radunits=km&radius=280&width=312&height=312&key=sat_vis_bottom&basemap=1&borders=1';
 exports.radarUrl = 'http://api.wunderground.com/api/0d87505114cceb6c/radar/image.png?centerlat=53.15&centerlon=7.55&radunits=km&radius=280&width=312&height=312&newmaps=0';
-exports.hourlyUrl = 'http://api.wunderground.com/api/0d87505114cceb6c/hourly10day/lang:DL/q/Germany/Ostrhauderfehn.json';
-exports.tenDayUrl = 'http://api.wunderground.com/api/0d87505114cceb6c/forecast10day/lang:DL/q/Germany/Ostrhauderfehn.json';
+//exports.forecastUrl = 'https://api.darksky.net/forecast/43c0ad60b1ef1cf56943bcaf7910de7b/53.0904,7.5692?lang=de&units=si&extend=hourly'; 
+exports.forecastUrl = 'https://api.darksky.net/forecast/43c0ad60b1ef1cf56943bcaf7910de7b/53.0904,7.9?lang=de&units=si&extend=hourly'; 
 
 exports.nightImgs = [
     "nt_clear",

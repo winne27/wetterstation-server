@@ -16,7 +16,7 @@ CHANGE MASTER TO
      MASTER_HOST='10.8.0.22',
      MASTER_USER='repl',
      MASTER_PASSWORD='fehn10#',
-     MASTER_LOG_FILE='mysql-bin.000560',
-     MASTER_LOG_POS=4898863;
+     MASTER_LOG_FILE='mysql-bin.000061',
+     MASTER_LOG_POS=337671;
 
 start slave;
